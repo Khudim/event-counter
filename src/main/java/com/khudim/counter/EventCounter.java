@@ -1,27 +1,32 @@
 package com.khudim.counter;
 
+
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Logger;
 
 public class EventCounter implements IEventCounter {
 
-    private static final int MINUTE = 60;
-    private static final int HOUR = 60 * 60;
-    private static final int DAY = 60 * 60 * 24;
+    private final static int MINUTE = 60;
+    private final static int HOUR = 60 * 60;
+    private final static int DAY = 60 * 60 * 24;
+
+    private Logger log = Logger.getLogger(EventCounter.class.getName());
 
     private final Map<SystemEvent, Counter> eventCounter = new ConcurrentHashMap<>();
 
-    public void register(SystemEvent event) {
-        Counter counter = eventCounter.get(event);
-        if (counter == null) {
-            synchronized (this) {
-                counter = eventCounter.get(event);
-                if (counter == null) {
-                    counter = new Counter();
-                    eventCounter.put(event, counter);
-                }
-            }
+    {
+        for (SystemEvent event : SystemEvent.values()) {
+            eventCounter.put(event, new Counter());
         }
+    }
+
+    public void register(SystemEvent event) {
+        if (event == null) {
+            log.warning("Event is null");
+            return;
+        }
+        Counter counter = eventCounter.get(event);
         counter.incrementCounter();
     }
 
@@ -39,6 +44,7 @@ public class EventCounter implements IEventCounter {
 
     private long getEventCount(SystemEvent event, int time) {
         if (event == null || eventCounter.get(event) == null) {
+            log.warning("Can't get count for event: " + event);
             return 0;
         }
         return eventCounter.get(event).getCountForTime(time);

@@ -1,13 +1,13 @@
 package com.khudim.counter;
 
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.LongAdder;
 
 public class Counter {
     private final long firstIndexTime;
     private final int arraySize = 25_920_000; // 10 months in seconds
     private final int timeStep = 1_000;       // Each array index is 1 second
 
-    private final AtomicInteger[] timeCounter = new AtomicInteger[arraySize];
+    private final LongAdder[] timeCounter = new LongAdder[arraySize];
 
     public Counter() {
         this.firstIndexTime = System.currentTimeMillis() / timeStep;
@@ -15,17 +15,17 @@ public class Counter {
 
     public void incrementCounter() {
         int index = getIndexFromCurrentTime();
-        AtomicInteger counter = timeCounter[index];
+        LongAdder counter = timeCounter[index];
         if (counter == null) {
             synchronized (this) {
                 counter = timeCounter[index];
                 if (counter == null) {
-                    counter = new AtomicInteger(0);
+                    counter = new LongAdder();
                     timeCounter[index] = counter;
                 }
             }
         }
-        counter.incrementAndGet();
+        counter.increment();
     }
 
     public long getCountForTime(int time) {
@@ -35,9 +35,9 @@ public class Counter {
             if ((index - i) < 0) {
                 break;
             }
-            AtomicInteger counter = timeCounter[index - i];
+            LongAdder counter = timeCounter[index - i];
             if (counter != null) {
-                count += counter.get();
+                count += counter.sum();
             }
         }
         return count;
